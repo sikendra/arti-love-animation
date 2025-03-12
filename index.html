@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arti I Love You</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            z-index: 2;
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 30px;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: scale(0.98) translateY(1px);
+        }
+
+        .message {
+            position: fixed;
+            top: 30px;
+            color: white;
+            font-size: 48px;
+            font-family: 'Brush Script MT', cursive;
+            text-align: center;
+            width: 100%;
+            z-index: 2;
+            text-shadow: 0 0 10px #ff1493, 0 0 20px #ff69b4, 0 0 30px #ff69b4;
+            animation: textEffects 8s infinite;
+            opacity: 1;
+        }
+
+        @keyframes textEffects {
+            0% { transform: scale(1); opacity: 1; text-shadow: 0 0 10px #ff1493, 0 0 20px #ff69b4, 0 0 30px #ff69b4; }
+            20% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 15px #ff1493, 0 0 25px #ff69b4, 0 0 35px #ff69b4; }
+            30% { transform: scale(1.2); opacity: 0.7; text-shadow: 0 0 15px #ff1493, 0 0 25px #ff69b4, 0 0 35px #ff69b4; }
+            40% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 15px #ff1493, 0 0 25px #ff69b4, 0 0 35px #ff69b4; }
+            50% { transform: scale(0.9); opacity: 1; text-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff; }
+            60% { transform: scale(1.1) rotate(2deg); opacity: 1; text-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff; }
+            70% { transform: scale(1.1) rotate(-2deg); opacity: 1; text-shadow: 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff; }
+            80% { transform: scale(1.3); opacity: 1; text-shadow: 0 0 10px #ff1493, 0 0 20px #ff69b4, 0 0 30px #ff69b4; }
+            90% { transform: scale(1.2); opacity: 0.8; text-shadow: 0 0 10px #ff1493, 0 0 20px #ff69b4, 0 0 30px #ff69b4; }
+            100% { transform: scale(1); opacity: 1; text-shadow: 0 0 10px #ff1493, 0 0 20px #ff69b4, 0 0 30px #ff69b4; }
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 80px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            width: 100%;
+            z-index: 2;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="message">Arti I Love You</div>
+    <div class="footer">Forever in my heart ❤️</div>
+    <div class="controls">
+        <button onclick="setAnimation('heart')">Hearts</button>
+        <button onclick="setAnimation('star')">Stars</button>
+        <button onclick="setAnimation('3d')">3D</button>
+        <button onclick="setAnimation('flower')">Flowers</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let animationMode = 'heart';
+        let hearts = [];
+        let particles = [];
+        let stars = [];
+        let flowers = [];
+        let angle = 0;
+        let mainHeartSize = 0;
+        let mainHeartGrowing = true;
+        let textEffects = {
+            size: 70,  // Increased from 40 to 70
+            opacity: 1,
+            rotation: 0,
+            hue: 0,
+            blinkState: 1,
+            blinkDirection: -0.05,
+            sizeDirection: 1,
+            rotationDirection: 1,
+            effectMode: 0,
+            effectTimer: 0,
+            effectDuration: 150,
+            letterSpacing: 0,
+            letterSpacingDirection: 1
+        };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function setAnimation(mode) {
+            animationMode = mode;
+            hearts = [];
+            particles = [];
+            stars = [];
+            flowers = [];
+            mainHeartSize = 0;
+            createElements();
+        }
+
+        function createElements() {
+            // Create appropriate elements based on animation mode
+            if (animationMode === 'heart' || animationMode === '3d') {
+                const count = animationMode === '3d' ? 8 : 20;
+                for (let i = 0; i < count; i++) {
+                    hearts.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 30 + 15,
+                        speed: Math.random() * 2 + 0.5,
+                        color: getRandomColor(),
+                        angle: Math.random() * Math.PI * 2,
+                        rotationSpeed: (Math.random() - 0.5) * 0.04,
+                        pulseSpeed: Math.random() * 0.05 + 0.01,
+                        pulseAmount: Math.random() * 0.3 + 0.1,
+                        pulseOffset: Math.random() * Math.PI * 2
+                    });
+                }
+            } else if (animationMode === 'star') {
+                for (let i = 0; i < 30; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 40 + 20,
+                        points: Math.floor(Math.random() * 3) + 5, // 5-7 points
+                        innerRadius: Math.random() * 0.4 + 0.3,
+                        rotation: Math.random() * Math.PI * 2,
+                        rotationSpeed: (Math.random() - 0.5) * 0.02,
+                        color: getRandomColor(),
+                        speed: Math.random() * 1.5 + 0.5
+                    });
+                }
+            } else if (animationMode === 'flower') {
+                for (let i = 0; i < 15; i++) {
+                    flowers.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 30 + 20,
+                        petals: Math.floor(Math.random() * 4) + 5, // 5-8 petals
+                        petalWidth: Math.random() * 0.5 + 0.3,
+                        rotation: Math.random() * Math.PI * 2,
+                        rotationSpeed: (Math.random() - 0.5) * 0.02,
+                        color: getRandomColor(),
+                        centerColor: getRandomColor(),
+                        speed: Math.random() * 1.5 + 0.5
+                    });
+                }
+            }
+        }
+
+        function getRandomColor() {
+            // Generate vibrant colors with a bias toward pinks and purples
+            const hue = Math.random() > 0.7 
+                ? Math.random() * 360 // Sometimes any color
+                : Math.random() * 60 + 300; // Mostly pinks/purples
+            return `hsl(${hue}, ${90 + Math.random() * 10}%, ${50 + Math.random() * 20}%)`;
+        }
+
+        function drawHeart(x, y, size, color, rotation = 0, glow = false) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            
+            // Add glow effect for special hearts
+            if (glow) {
+                ctx.shadowColor = color;
+                ctx.shadowBlur = size * 0.5;
+            }
+            
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            
+            // Draw a more realistic heart shape
+            const topCurveHeight = size * 0.3;
+            const bottomCurveHeight = size * 0.7;
+            
+            // Left curve
+            ctx.moveTo(0, topCurveHeight);
+            ctx.bezierCurveTo(
+                -size, -size * 0.2, // Control point 1
+                -size, size * 0.5,  // Control point 2
+                0, bottomCurveHeight // End point
+            );
+            
+            // Right curve
+            ctx.bezierCurveTo(
+                size, size * 0.5,   // Control point 1
+                size, -size * 0.2,  // Control point 2
+                0, topCurveHeight   // End point
+            );
+            
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add highlight for 3D effect
+            if (size > 20) {
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.ellipse(-size * 0.3, -size * 0.1, size * 0.2, size * 0.1, Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        function drawStar(x, y, outerRadius, innerRadius, points, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            
+            // Add glow effect
+            ctx.shadowColor = color;
+            ctx.shadowBlur = outerRadius * 0.5;
+            
+            for (let i = 0; i < points * 2; i++) {
+                const radius = i % 2 === 0 ? outerRadius : innerRadius * outerRadius;
+                const angle = (Math.PI * 2 * i) / (points * 2);
+                const px = radius * Math.cos(angle);
+                const py = radius * Math.sin(angle);
+                
+                if (i === 0) {
+                    ctx.moveTo(px, py);
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add highlight for 3D effect
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.arc(0, 0, innerRadius * outerRadius * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawFlower(x, y, size, petals, petalWidth, color, centerColor, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            
+            // Add glow effect
+            ctx.shadowColor = color;
+            ctx.shadowBlur = size * 0.3;
+            
+            // Draw petals
+            for (let i = 0; i < petals; i++) {
+                const angle = (Math.PI * 2 * i) / petals;
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                
+                // Draw petal as ellipse
+                ctx.ellipse(
+                    size * 0.7 * Math.cos(angle), 
+                    size * 0.7 * Math.sin(angle), 
+                    size * petalWidth, 
+                    size * 0.5, 
+                    angle, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            // Draw center
+            ctx.beginPath();
+            ctx.fillStyle = centerColor;
+            ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add highlight for 3D effect
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.ellipse(-size * 0.1, -size * 0.1, size * 0.15, size * 0.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function createParticles(x, y, color, count = 5) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x,
+                    y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    size: Math.random() * 5 + 2,
+                    color,
+                    life: 1,
+                    type: Math.random() > 0.7 ? 'heart' : 'circle'
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.05; // Gravity
+                p.life -= 0.02;
+                
+                if (p.life > 0) {
+                    ctx.globalAlpha = p.life;
+                    
+                    if (p.type === 'heart') {
+                        drawHeart(p.x, p.y, p.size * 2, p.color);
+                    } else {
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    ctx.globalAlpha = 1;
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        function drawMainHeart() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Update main heart size with smooth animation
+            if (mainHeartGrowing) {
+                mainHeartSize += 1;
+                if (mainHeartSize > 150) mainHeartGrowing = false;
+            } else {
+                mainHeartSize -= 1;
+                if (mainHeartSize < 100) mainHeartGrowing = true;
+            }
+            
+            // Draw main heart with glow
+            drawHeart(centerX, centerY, mainHeartSize, '#ff1493', 0, true);
+            
+            // Add text inside
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('Arti', centerX, centerY - 15);
+            ctx.fillText('I Love You', centerX, centerY + 15);
+            ctx.restore();
+            
+            // Occasionally emit particles
+            if (Math.random() < 0.1) {
+                createParticles(centerX, centerY, '#ff1493', 3);
+            }
+        }
+
+        function animate() {
+            // Clear with fade effect for trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            angle += 0.02;
+            
+            // Draw animated text
+            drawAnimatedText();
+            
+            // Draw main heart in center for all modes
+            if (animationMode !== '3d') {
+                drawMainHeart();
+            }
+
+            // Update and draw elements based on animation mode
+            if (animationMode === 'heart' || animationMode === '3d') {
+                hearts.forEach(heart => {
+                    heart.y += heart.speed;
+                    if (heart.y > canvas.height + heart.size) {
+                        heart.y = -heart.size;
+                        heart.x = Math.random() * canvas.width;
+                    }
+                    
+                    heart.angle += heart.rotationSpeed;
+                    
+                    // Add pulsing effect
+                    const pulseFactor = 1 + heart.pulseAmount * Math.sin(angle * heart.pulseSpeed + heart.pulseOffset);
+                    
+                    if (animationMode === '3d') {
+                        // 3D effect with shadow and scaling
+                        const scale = 0.7 + 0.5 * Math.sin(heart.angle);
+                        const shadowBlur = 20 * scale;
+                        
+                        ctx.shadowColor = heart.color;
+                        ctx.shadowBlur = shadowBlur;
+                        drawHeart(heart.x, heart.y, heart.size * scale * pulseFactor, heart.color, heart.angle, true);
+                        ctx.shadowBlur = 0;
+                    } else {
+                        drawHeart(heart.x, heart.y, heart.size * pulseFactor, heart.color, heart.angle);
+                    }
+
+                    // Occasionally emit particles
+                    if (Math.random() < 0.03) {
+                        createParticles(heart.x, heart.y, heart.color);
+                    }
+                });
+            } else if (animationMode === 'star') {
+                stars.forEach(star => {
+                    star.y += star.speed;
+                    if (star.y > canvas.height + star.size) {
+                        star.y = -star.size;
+                        star.x = Math.random() * canvas.width;
+                    }
+                    
+                    star.rotation += star.rotationSpeed;
+                    drawStar(star.x, star.y, star.size, star.innerRadius, star.points, star.color, star.rotation);
+                    
+                    // Occasionally emit particles
+                    if (Math.random() < 0.02) {
+                        createParticles(star.x, star.y, star.color);
+                    }
+                });
+            } else if (animationMode === 'flower') {
+                flowers.forEach(flower => {
+                    flower.y += flower.speed;
+                    if (flower.y > canvas.height + flower.size) {
+                        flower.y = -flower.size;
+                        flower.x = Math.random() * canvas.width;
+                    }
+                    
+                    flower.rotation += flower.rotationSpeed;
+                    drawFlower(
+                        flower.x, flower.y, 
+                        flower.size, flower.petals, 
+                        flower.petalWidth, flower.color, 
+                        flower.centerColor, flower.rotation
+                    );
+                    
+                    // Occasionally emit particles
+                    if (Math.random() < 0.02) {
+                        createParticles(flower.x, flower.y, flower.color);
+                    }
+                });
+            }
+
+            // Update and draw particles for all modes
+            updateParticles();
+            
+            // Continue animation
+            requestAnimationFrame(animate);
+        }
+
+        function drawAnimatedText() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 3;
+            
+            // Update text animation effects
+            updateTextEffects();
+            
+            // Set text properties
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Apply current effects
+            ctx.globalAlpha = textEffects.blinkState;
+            ctx.translate(centerX, centerY);
+            ctx.rotate(textEffects.rotation);
+            
+            // Create gradient for text
+            let gradient;
+            if (textEffects.effectMode === 3) {
+                // Color cycling effect
+                gradient = ctx.createLinearGradient(-300, 0, 300, 0);
+                gradient.addColorStop(0, `hsl(${textEffects.hue}, 100%, 50%)`);
+                gradient.addColorStop(0.5, `hsl(${(textEffects.hue + 120) % 360}, 100%, 50%)`);
+                gradient.addColorStop(1, `hsl(${(textEffects.hue + 240) % 360}, 100%, 50%)`);
+            } else {
+                // Default gradient
+                gradient = ctx.createLinearGradient(-300, 0, 300, 0);
+                gradient.addColorStop(0, '#ff1493');
+                gradient.addColorStop(0.5, '#ff69b4');
+                gradient.addColorStop(1, '#ff1493');
+            }
+            
+            // Draw text shadow for glow effect
+            ctx.shadowColor = '#ff1493';
+            ctx.shadowBlur = 30; // Increased glow
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Draw main text
+            ctx.font = `bold ${textEffects.size}px 'Arial', sans-serif`;
+            ctx.fillStyle = gradient;
+            
+            // Handle letter spacing effect
+            if (textEffects.effectMode === 5) {
+                // Draw each letter separately with spacing
+                const artiText = "Arti";
+                const loveText = "I Love You";
+                let artiWidth = 0;
+                let loveWidth = 0;
+                
+                // Draw "Arti" with spacing
+                for (let i = 0; i < artiText.length; i++) {
+                    const letter = artiText[i];
+                    const letterWidth = ctx.measureText(letter).width;
+                    const xPos = -artiWidth + i * textEffects.letterSpacing;
+                    ctx.fillText(letter, xPos, -textEffects.size * 0.6);
+                    artiWidth += letterWidth + textEffects.letterSpacing;
+                }
+                
+                // Draw "I Love You" with spacing
+                for (let i = 0; i < loveText.length; i++) {
+                    const letter = loveText[i];
+                    const letterWidth = ctx.measureText(letter).width;
+                    const xPos = -loveWidth + i * textEffects.letterSpacing;
+                    ctx.fillText(letter, xPos, textEffects.size * 0.6);
+                    loveWidth += letterWidth + textEffects.letterSpacing;
+                }
+            } else {
+                // Draw text normally
+                ctx.fillText('Arti', 0, -textEffects.size * 0.6);
+                ctx.fillText('I Love You', 0, textEffects.size * 0.6);
+            }
+            
+            // Add sparkles around text
+            if (Math.random() < 0.4) { // More sparkles
+                const sparkleX = (Math.random() - 0.5) * 400;
+                const sparkleY = (Math.random() - 0.5) * 200;
+                createParticles(centerX + sparkleX, centerY + sparkleY, '#ffffff', 3);
+            }
+            
+            ctx.restore();
+        }
+
+        function updateTextEffects() {
+            // Update effect timer
+            textEffects.effectTimer++;
+            if (textEffects.effectTimer >= textEffects.effectDuration) {
+                textEffects.effectTimer = 0;
+                textEffects.effectMode = (textEffects.effectMode + 1) % 6; // Cycle through 6 different effects
+            }
+            
+            // Apply different effects based on current mode
+            switch(textEffects.effectMode) {
+                case 0: // Pulsing size
+                    textEffects.size += textEffects.sizeDirection * 0.8; // Faster pulsing
+                    if (textEffects.size > 90) { // Larger maximum size
+                        textEffects.size = 90;
+                        textEffects.sizeDirection = -1;
+                    } else if (textEffects.size < 50) { // Larger minimum size
+                        textEffects.size = 50;
+                        textEffects.sizeDirection = 1;
+                    }
+                    break;
+                    
+                case 1: // Blinking
+                    textEffects.blinkState += textEffects.blinkDirection;
+                    if (textEffects.blinkState <= 0.2) { // More pronounced blinking
+                        textEffects.blinkState = 0.2;
+                        textEffects.blinkDirection = 0.05;
+                    } else if (textEffects.blinkState >= 1) {
+                        textEffects.blinkState = 1;
+                        textEffects.blinkDirection = -0.05;
+                    }
+                    break;
+                    
+                case 2: // Rotating
+                    textEffects.rotation += textEffects.rotationDirection * 0.02; // Faster rotation
+                    if (Math.abs(textEffects.rotation) > 0.2) { // More pronounced rotation
+                        textEffects.rotationDirection *= -1;
+                    }
+                    break;
+                    
+                case 3: // Color cycling
+                    textEffects.hue = (textEffects.hue + 3) % 360; // Faster color cycling
+                    break;
+                    
+                case 4: // Jumping
+                    if (textEffects.effectTimer % 30 < 15) {
+                        textEffects.size = 70 + Math.sin(textEffects.effectTimer * 0.3) * 20; // More pronounced jumping
+                    } else {
+                        textEffects.size = 70;
+                    }
+                    break;
+                    
+                case 5: // Letter spacing
+                    textEffects.letterSpacing += textEffects.letterSpacingDirection * 0.5;
+                    if (textEffects.letterSpacing > 20) {
+                        textEffects.letterSpacing = 20;
+                        textEffects.letterSpacingDirection = -1;
+                    } else if (textEffects.letterSpacing < 0) {
+                        textEffects.letterSpacing = 0;
+                        textEffects.letterSpacingDirection = 1;
+                    }
+                    break;
+            }
+        }
+
+        createElements();
+        animate();
+    </script>
+</body>
+</html> 
